@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @AllArgsConstructor
@@ -18,8 +20,8 @@ public class Transaction {
   @JsonAlias("account_balance")
   private String accountBalance;
 
-  @JsonAlias("trans_history")
-  private JsonObject transactionHistory;
+  @JsonAlias("transaction_history")
+  private List<JsonObject> transactionHistory;
   //type (1: thẻ, 2: phone), to, tên người thụ hưởng, money, date, status, phí chuyển, người chịu phí
 
   @JsonAlias("date_update")

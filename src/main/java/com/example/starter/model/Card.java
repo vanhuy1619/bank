@@ -34,7 +34,6 @@ public class Card {
 
   @JsonAlias("typecard")
   private List<Integer> typeCard;
-  //1:atm, 2: credit, 3: đảm bảo, 4: prepaid(trả trước), 5: ghi nợ
 
   @JsonAlias("link")
   private List<String> link;
@@ -44,4 +43,7 @@ public class Card {
 
   @JsonAlias("status_approve")
   private String statusApprove;
+
+  @JsonAlias("typecard_action")
+  private List<Integer> typeCardAction;
 }

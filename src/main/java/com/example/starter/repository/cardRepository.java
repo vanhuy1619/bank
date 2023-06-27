@@ -1,7 +1,10 @@
 package com.example.starter.repository;
 
 import com.example.starter.config.uploadConfig;
+import com.example.starter.model.Card;
 import com.example.starter.model.callback.ResponeCallback;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.file.FileSystem;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
@@ -10,7 +13,6 @@ import com.example.starter.middleware.checkIdUser;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.Tuple;
-import lombok.Data;
 import lombok.SneakyThrows;
 
 import java.io.File;
@@ -29,6 +31,9 @@ public class cardRepository {
   private uploadConfig uploadConfig = new uploadConfig();
   private ResponeCallback responeCallback = new ResponeCallback();
   Date date = new Date();
+
+  private ObjectMapper objectMapper = new ObjectMapper();
+
 
   private static String generateRandomNumber(int length) {
     StringBuilder sb = new StringBuilder();
@@ -57,25 +62,24 @@ public class cardRepository {
 
     JsonObject object = context.getBodyAsJson();
     String iduser = object.getString("iduser");
-    String typecard = object.getString("typecard");
+    Integer typecard = Integer.parseInt(object.getString("typecard"));
     String cif = generateRandomNumber(16);
     String idcard = generateRandomNumber(14);
     String dateRegist = String.valueOf(new Timestamp(date.getTime()));
 
     checkIdUser.checkIdUser(pgPool, iduser)
       .thenAccept(userExists -> {
-        String imagePath = handleImageUpload(context, iduser);
-
-        if (userExists) {
-          pgPool.preparedQuery("SELECT typecard FROM card WHERE iduser = ?")
+        if (userExists != null)
+        {
+          pgPool.preparedQuery("SELECT * FROM card WHERE iduser = ?")
             .execute(Tuple.of(iduser))
             .onSuccess(result -> {
-              boolean typecardExists = false;
-              List<Integer> existingTypecards = new ArrayList<>();
-
-              if (result.size() == 0) {
-                pgPool.preparedQuery("INSERT INTO card (iduser, idcard, date_regist, cvv, typecard, signature, cif) VALUES (?,?,?,?,ARRAY[?]::integer[],?,?)")
-                  .execute(Tuple.of(iduser, idcard, dateRegist, 123, new String[]{typecard}, imagePath, cif))
+              if (result.size() == 0)
+              {
+                // create and save image
+                String imagePath = handleImageUpload(context, iduser);
+                pgPool.preparedQuery("INSERT INTO card (iduser, idcard, date_regist, cvv, typecard, signature, cif, status_approve) VALUES (?,?,?,?,ARRAY[?]::integer[],?,?,?)")
+                  .execute(Tuple.of(iduser, idcard, dateRegist, 123, typecard, imagePath, cif,"Waiting Approve All"))
                   .onSuccess(s -> {
                     responeCallback.responseClient(context, 200, 0, "Waiting for registering", null);
                   })
@@ -83,23 +87,22 @@ public class cardRepository {
                     responeCallback.responseClient(context, 400, 1, f.getMessage(), null);
                   });
               } else {
+                List<Integer> typeCards = new ArrayList<>();
                 for (Row row : result) {
-                  List<Integer> typecardList = row.getJsonArray("typecard").getList();
-                  existingTypecards.addAll(typecardList);
-
-                  if (typecardList.contains(Integer.parseInt(typecard))) {
-                    typecardExists = true;
-                    break;
+                  JsonObject json = row.toJson();
+                  try {
+                    Card card = objectMapper.readValue(json.toString(), Card.class);
+                    typeCards.addAll(card.getTypeCard());
+                  } catch (JsonProcessingException e) {
+                    throw new RuntimeException(e);
                   }
                 }
-
-                if (typecardExists) {
-                  responeCallback.responseClient(context, 400, 1, "Record with the same typecard already exists", null);
+                if (typeCards.contains(typecard)) {
+                  responeCallback.responseClient(context, 400, 1,"Typecard card has registered", null);
                 } else {
-                  existingTypecards.add(Integer.parseInt(typecard));
-
-                  pgPool.preparedQuery("UPDATE card SET typecard = ? WHERE iduser = ?")
-                    .execute(Tuple.of(existingTypecards, iduser))
+                  typeCards.add(typecard);
+                  pgPool.preparedQuery("UPDATE card SET typecard = array_append(typecard,?) WHERE iduser = ?")
+                    .execute(Tuple.of(typecard, iduser))
                     .onSuccess(updateResult -> {
                       responeCallback.responseClient(context, 200, 0, "Typecard appended successfully", null);
                     })
@@ -113,7 +116,8 @@ public class cardRepository {
               responeCallback.responseClient(context, 400, 1, f.getMessage(), null);
             });
         } else {
-
+          // Handle case when user does not exist
+          responeCallback.responseClient(context, 400, 1,"User not found", null);
         }
       });
   }
