@@ -1,5 +1,7 @@
 package com.example.starter.repository;
 
+import com.example.starter.config.uploadConfig;
+import com.example.starter.model.Credentials;
 import com.example.starter.model.UserInfo;
 import com.example.starter.model.callback.ResponeCallback;
 import com.example.starter.validate.validateConfig;
@@ -18,12 +20,16 @@ import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Row;
 import io.vertx.sqlclient.RowSet;
 import io.vertx.sqlclient.Tuple;
+import lombok.Data;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,6 +38,10 @@ public class userRepository {
   private validateConfig validateConfig = new validateConfig();
   private ResponeCallback responeCallback = new ResponeCallback();
   private ObjectMapper objectMapper = new ObjectMapper();
+
+  Date date = new Date();
+
+  uploadConfig uploadConfig = new uploadConfig();
 
   public userRepository(JDBCPool pgPool) {
     this.pgPool = pgPool;
@@ -254,14 +264,14 @@ public class userRepository {
       }
 
       // Generate unique file names for the uploaded images
-      String frontImageExtension = getImageExtension(frontImageBase64);
-      String backImageExtension = getImageExtension(backgroundImgBase64);
+      String frontImageExtension = uploadConfig.getImageExtension(frontImageBase64);
+      String backImageExtension = uploadConfig.getImageExtension(backgroundImgBase64);
 
-      String frontImageName = generateUniqueFileName() + frontImageExtension;
-      String backImageName = generateUniqueFileName() + backImageExtension;
+      String frontImageName = uploadConfig.generateUniqueFileName() + frontImageExtension;
+      String backImageName = uploadConfig.generateUniqueFileName() + backImageExtension;
 
       // Save front image
-      saveImageToFile(fileSystem, userFolderPath, "front.jpg", frontImageBytes, result -> {
+      uploadConfig.saveImageToFile(fileSystem, userFolderPath, "front.jpg", frontImageBytes, result -> {
         if (result.succeeded()) {
           resultUpload[0] = "Front image uploaded successfully";
         } else {
@@ -270,7 +280,7 @@ public class userRepository {
         }
 
         // Save background image
-        saveImageToFile(fileSystem, userFolderPath, "back.jpg", backgroundImgBytes, bgResult -> {
+        uploadConfig.saveImageToFile(fileSystem, userFolderPath, "back.jpg", backgroundImgBytes, bgResult -> {
           if (bgResult.succeeded()) {
             resultUpload[1] = "Back image uploaded successfully";
           } else {
@@ -298,48 +308,87 @@ public class userRepository {
     }
   }
 
-  private String getImageExtension(String base64String) {
-    String extension = "";
-    if (base64String.startsWith("data:image/png")) {
-      extension = ".png";
-    } else if (base64String.startsWith("data:image/jpeg") || base64String.startsWith("data:image/jpg")) {
-      extension = ".jpeg";
-    }
-    // Add more conditions for other image formats if needed
 
-    return extension;
-  }
+  public void updatePassword(RoutingContext context) {
+    JsonObject jsonObject = context.getBodyAsJson();
+    String iduser = jsonObject.getString("iduser");
+    String currentPass = jsonObject.getString("current_pass");
+    String newPass = jsonObject.getString("new_pass");
+    UserInfo[] userInfo = new UserInfo[1];
 
-  private String generateUniqueFileName() {
-    return UUID.randomUUID().toString();
-  }
-  private void saveImageToFile(FileSystem fileSystem, String savePath, String fileName, byte[] imageBytes, io.vertx.core.Handler<io.vertx.core.AsyncResult<Void>> handler) {
-    Buffer buffer = Buffer.buffer(imageBytes);
-    fileSystem.open(savePath + fileName, new OpenOptions(), openResult -> {
-      if (openResult.succeeded()) {
-        AsyncFile asyncFile = openResult.result();
-        asyncFile.write(buffer, 0, writeResult -> {
-          if (writeResult.succeeded()) {
-            asyncFile.close(closeResult -> {
-              if (closeResult.succeeded()) {
-                handler.handle(io.vertx.core.Future.succeededFuture());
-              } else {
-                handler.handle(io.vertx.core.Future.failedFuture(closeResult.cause()));
-              }
-            });
-          } else {
-            asyncFile.close(closeResult -> {
-              if (closeResult.succeeded()) {
-                handler.handle(io.vertx.core.Future.failedFuture(writeResult.cause()));
-              } else {
-                handler.handle(io.vertx.core.Future.failedFuture(closeResult.cause()));
-              }
-            });
+    pgPool.preparedQuery("SELECT * FROM userinfo WHERE iduser = ? LIMIT 1")
+      .execute(Tuple.of(iduser))
+      .onSuccess(rows -> {
+        for (Row row : rows) {
+          JsonObject json = row.toJson();
+          UserInfo user;
+          try {
+            user = objectMapper.readValue(json.toString(), UserInfo.class);
+            userInfo[0] = user;
+            break;
+          } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
           }
-        });
-      } else {
-        handler.handle(io.vertx.core.Future.failedFuture(openResult.cause()));
-      }
-    });
+        }
+        if (userInfo[0] != null) {
+          UserInfo user = userInfo[0];
+          String phone = user.getPhone();
+
+          pgPool.preparedQuery("SELECT * FROM credential WHERE phone = ? LIMIT 1")
+            .execute(Tuple.of(phone))
+            .onFailure(f -> {
+              responeCallback.responseClient(context, 400, 1, "Query Fail", null);
+            })
+            .onSuccess(rows2 -> {
+              boolean foundCredentials = false;
+              for (Row row : rows2) {
+                JsonObject json2 = row.toJson();
+                Credentials credentials;
+
+                try {
+                  credentials = objectMapper.readValue(json2.toString(), Credentials.class);
+                  foundCredentials = true;
+                  boolean checkPass = BCrypt.checkpw(currentPass, credentials.getPassword());
+                  System.out.println(checkPass);
+                  if (checkPass) {
+                    String hashedNewPass;
+                    try {
+                      hashedNewPass = BCrypt.hashpw(newPass, BCrypt.gensalt());
+                    } catch (IllegalArgumentException e) {
+                      responeCallback.responseClient(context, 400, 1, "Failed to hash the new password", null);
+                      return;
+                    }
+
+                    pgPool.preparedQuery("UPDATE credential SET password = ?, old_password = array_append(old_password, ?), update_pass = ? WHERE phone = ?")
+                      .execute(Tuple.of(hashedNewPass, credentials.getPassword(), String.valueOf(new Timestamp(date.getTime())), credentials.getPhone()))
+                      .onSuccess(updateResult -> {
+                        responeCallback.responseClient(context, 200, 0, "Update success", null);
+                      })
+                      .onFailure(updateFailure -> {
+                        responeCallback.responseClient(context, 400, 1, String.valueOf(updateFailure.getMessage()), null);
+                      });
+                  } else {
+                    responeCallback.responseClient(context, 400, 1, "Current password incorrect", null);
+                  }
+
+                } catch (JsonProcessingException e) {
+                  throw new RuntimeException(e);
+                }
+              }
+
+              if (!foundCredentials) {
+                responeCallback.responseClient(context, 400, 1, "User credentials not found", null);
+              }
+            });
+        } else {
+          responeCallback.responseClient(context, 400, 1, "User not found", null);
+        }
+      })
+      .onFailure(f -> {
+        responeCallback.responseClient(context, 400, 1, "Iduser not found", null);
+      });
   }
+
+
+
 }

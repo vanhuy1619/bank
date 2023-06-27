@@ -3,10 +3,12 @@ package com.example.starter.model;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import io.vertx.core.json.JsonObject;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class Transaction {

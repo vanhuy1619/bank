@@ -6,6 +6,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
+import io.vertx.core.json.Json;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import lombok.SneakyThrows;
 
@@ -44,6 +46,13 @@ public class ResponeCallback<T> {
     ResponeCallback response = new ResponeCallback<>(code, mess, data);
     String responseJson = objectMapper.writeValueAsString(response);
     context.response().setStatusCode(statusCode).putHeader("Content-Type", "application/json").end(responseJson);
+
+    //Ánh xạ đối tượng
+//    JsonObject jsonObject = JsonObject.mapFrom();
+//    context.response()
+//      .setStatusCode(200)
+//      .putHeader("Content-Type","application/json")
+//      .end(Json.encodePrettily(jsonObject));
   }
 
 

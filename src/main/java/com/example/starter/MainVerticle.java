@@ -2,6 +2,7 @@ package com.example.starter;
 
 import com.example.starter.auth.tokenAuth;
 import com.example.starter.datasource.dataSource;
+import com.example.starter.repository.cardRepository;
 import com.example.starter.repository.userRepository;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -64,13 +65,16 @@ public class MainVerticle extends AbstractVerticle {
     JDBCPool db = dataSource.getPool();
 
     userRepository userRepository = new userRepository(db);
+    cardRepository cardRepository = new cardRepository(db);
 //    router.post("/jwt").handler(this::tt);
 
     router.post("/regist-info").handler(userRepository::handleRegistration);
     router.post("/regist").handler(userRepository::handleRegist);
     router.get("/api").handler(userRepository::select);
     router.post("/upload-id-img").handler(userRepository::handleImageUpload);
+    router.post("/update-pass").handler(userRepository::updatePassword);
 
+    router.post("/open-card").handler(cardRepository::openCard);
     return router;
   }
 

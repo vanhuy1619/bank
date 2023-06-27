@@ -2,12 +2,14 @@ package com.example.starter.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Card {
@@ -18,8 +20,14 @@ public class Card {
   @JsonAlias("idcard")
   private String idcard;
 
-  @JsonAlias("date_open")
-  private String dateOpen;
+  @JsonAlias("cif")
+  private String cif;
+
+  @JsonAlias("date_regist")
+  private String dateRegist;
+
+  @JsonAlias("date_approve")
+  private String dateApprove;
 
   @JsonAlias("cvv")
   private String cvv;
@@ -33,4 +41,7 @@ public class Card {
 
   @JsonAlias("signature")
   private String signature;
+
+  @JsonAlias("status_approve")
+  private String statusApprove;
 }
