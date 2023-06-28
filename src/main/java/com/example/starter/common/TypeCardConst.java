@@ -1,4 +1,4 @@
-package com.example.starter.common.constant;
+package com.example.starter.common;
 //1:atm, 2: credit, 3: đảm bảo, 4: prepaid(trả trước), 5: ghi nợ
 
 public enum TypeCardConst {

@@ -1,8 +1,10 @@
-package com.example.starter.repository;
+package com.example.starter.services.impl;
 
+import com.example.starter.config.RandomNum;
 import com.example.starter.config.uploadConfig;
 import com.example.starter.model.Card;
 import com.example.starter.model.callback.ResponeCallback;
+import com.example.starter.services.CardService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vertx.core.file.FileSystem;
@@ -24,7 +26,7 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class cardRepository {
+public class cardRepository implements CardService {
   private JDBCPool pgPool;
 
   checkIdUser checkIdUser = new checkIdUser();
@@ -34,24 +36,12 @@ public class cardRepository {
 
   private ObjectMapper objectMapper = new ObjectMapper();
 
-
-  private static String generateRandomNumber(int length) {
-    StringBuilder sb = new StringBuilder();
-    Random random = new Random();
-
-    for (int i = 0; i < length; i++) {
-      int digit = random.nextInt(10);
-      sb.append(digit);
-    }
-
-    return sb.toString();
-  }
-
   public cardRepository(JDBCPool pgPool) {
     this.pgPool = pgPool;
   }
 
   @SneakyThrows
+  @Override
   public void openCard(RoutingContext context) {
     if (!"application/json".equals(context.request().getHeader("Content-Type"))) {
       context.response()
@@ -63,8 +53,8 @@ public class cardRepository {
     JsonObject object = context.getBodyAsJson();
     String iduser = object.getString("iduser");
     Integer typecard = Integer.parseInt(object.getString("typecard"));
-    String cif = generateRandomNumber(16);
-    String idcard = generateRandomNumber(14);
+    String cif = RandomNum.generateRandomNumber(16);
+    String idcard = RandomNum.generateRandomNumber(14);
     String dateRegist = String.valueOf(new Timestamp(date.getTime()));
 
     checkIdUser.checkIdUser(pgPool, iduser)
@@ -121,7 +111,6 @@ public class cardRepository {
         }
       });
   }
-
 
   public String handleImageUpload(RoutingContext routingContext, String iduser) {
     HttpServerResponse response = routingContext.response();

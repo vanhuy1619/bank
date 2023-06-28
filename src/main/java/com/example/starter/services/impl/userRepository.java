@@ -1,9 +1,10 @@
-package com.example.starter.repository;
+package com.example.starter.services.impl;
 
 import com.example.starter.config.uploadConfig;
 import com.example.starter.model.Credentials;
 import com.example.starter.model.UserInfo;
 import com.example.starter.model.callback.ResponeCallback;
+import com.example.starter.services.UserService;
 import com.example.starter.validate.validateConfig;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,12 +34,11 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class userRepository {
+public class userRepository implements UserService {
   private JDBCPool pgPool;
   private validateConfig validateConfig = new validateConfig();
   private ResponeCallback responeCallback = new ResponeCallback();
   private ObjectMapper objectMapper = new ObjectMapper();
-
   Date date = new Date();
 
   uploadConfig uploadConfig = new uploadConfig();
@@ -63,6 +63,7 @@ public class userRepository {
     return promise;
   }
 
+  @Override
   public void handleRegistration(RoutingContext routingContext) {
     if (!"application/json".equals(routingContext.request().getHeader("Content-Type"))) {
       routingContext.response()
@@ -146,7 +147,7 @@ public class userRepository {
       }
     }
 
-    int pageSize = 1; // Number of records per page
+    int pageSize = 2; // Number of records per page
     int offset = (pageNumber - 1) * pageSize;
 
     pgPool.preparedQuery("SELECT * FROM userinfo LIMIT ? OFFSET ?")
@@ -172,6 +173,7 @@ public class userRepository {
       });
   }
 
+  @Override
   public void handleRegist(RoutingContext context) {
     JsonObject jsonObject = context.getBodyAsJson();
     String phone = jsonObject.getString("phone");
@@ -213,6 +215,7 @@ public class userRepository {
     }
   }
 
+  @Override
   public void handleImageUpload(RoutingContext routingContext) {
     HttpServerResponse response = routingContext.response();
     response.setChunked(true);
@@ -308,7 +311,7 @@ public class userRepository {
     }
   }
 
-
+  @Override
   public void updatePassword(RoutingContext context) {
     JsonObject jsonObject = context.getBodyAsJson();
     String iduser = jsonObject.getString("iduser");
