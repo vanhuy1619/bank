@@ -5,6 +5,7 @@ import com.example.starter.config.uploadConfig;
 import com.example.starter.handler.TransactionValidationRequestHandler;
 import com.example.starter.middleware.checkIdUser;
 import com.example.starter.model.Cost;
+import com.example.starter.model.Ewallet;
 import com.example.starter.model.UserInfo;
 import com.example.starter.model.callback.ResponeCallback;
 import com.example.starter.schema.TransactionSchemaBuider;
@@ -245,7 +246,6 @@ public class TransactionRepository implements TransactionService {
     }
   }
 
-
   public CompletableFuture<Boolean> checkTypeCard(String iduser, int typecard) {
     CompletableFuture<Boolean> future = new CompletableFuture<>();
 
@@ -282,4 +282,9 @@ public class TransactionRepository implements TransactionService {
     return future;
   }
 
+  @Override //
+  public void TranferMoneyBankToEwallet(RoutingContext context, Ewallet ewallet) {
+
+
+  }
 }

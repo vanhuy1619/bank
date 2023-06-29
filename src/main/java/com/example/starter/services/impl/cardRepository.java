@@ -42,7 +42,7 @@ public class cardRepository implements CardService {
 
   @SneakyThrows
   @Override
-  public void openCard(RoutingContext context) {
+  public void openCardType(RoutingContext context) {
     if (!"application/json".equals(context.request().getHeader("Content-Type"))) {
       context.response()
         .setStatusCode(415)

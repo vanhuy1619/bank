@@ -35,6 +35,5 @@ public class TransactionValidationRequestHandler {
 
       responeCallback.responseClient(rc, 400, 1, errorMsg, null);
     }
-
   }
 }

@@ -40,12 +40,10 @@ public class BankRouter {
     router.post(EndpointConst.API_UPDATE_PASSWORD).handler(userRepository::updatePassword);
 
     //card
-    router.post(EndpointConst.API_OPEN_CARD).handler(cardRepository::openCard);
+    router.post(EndpointConst.API_OPEN_CARD).handler(cardRepository::openCardType);
 
     //transaction
-    router.post(EndpointConst.API_TRANFER_BANK2BANK).handler(transactionRepository::TranferMoneyBankToBank);
-
-    router.post("/transaction")
+    router.post(EndpointConst.API_TRANFER_BANK2BANK)
       .handler(new TransactionValidationRequestHandler(TransactionSchemaBuider.build())::validate)
       .handler(transactionRepository::TranferMoneyBankToBank);
 

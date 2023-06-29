@@ -7,6 +7,7 @@ public interface EndpointConst {
   public static final String API_UPLOAD_CITIZEN = ROUTE + "/upload/citizen";
   public static final String API_OPEN_CARD = ROUTE + "/open/card";
   public static final String API_TRANFER_BANK2BANK = ROUTE + "/tranfer/b2b";
+  public static final String API_TRANFER_MOMO2MOMO = ROUTE + "/tranfer/b2b";
 
 
 }
