@@ -14,15 +14,18 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Transaction {
-  @JsonAlias("iduser")
-  private String iduser;
+  @JsonAlias("idcard")
+  private String idcard;
 
   @JsonAlias("account_balance")
   private String accountBalance;
 
-  @JsonAlias("transaction_history")
-  private List<JsonObject> transactionHistory;
+  @JsonAlias("transaction_history_send")
+  private List<JsonObject> transactionHistorySend;
   //type (1: thẻ, 2: phone), to, tên người thụ hưởng, money, date, status, phí chuyển, người chịu phí
+
+  @JsonAlias("transaction_history_send_to")
+  private List<JsonObject> transactionHistoryTo;
 
   @JsonAlias("date_update")
   private String dateUpdate;

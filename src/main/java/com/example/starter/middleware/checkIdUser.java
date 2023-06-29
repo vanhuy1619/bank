@@ -36,6 +36,10 @@ public class checkIdUser {
     pgPool.preparedQuery("SELECT * FROM userinfo WHERE iduser = ?")
       .execute(Tuple.of(idUser))
       .onSuccess(result -> {
+        if (result.size() == 0) {
+          future.complete(null);
+          return;
+        }
         for (Row row : result) {
           JsonObject jsonObject = row.toJson();
           try {
@@ -47,12 +51,11 @@ public class checkIdUser {
             return;
           }
         }
-        future.complete(null); // If no user info found, complete with null
+        future.complete(null);
       })
       .onFailure(error -> {
         future.completeExceptionally(error);
       });
-
     return future;
   }
 }

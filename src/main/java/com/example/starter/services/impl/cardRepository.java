@@ -88,7 +88,7 @@ public class cardRepository implements CardService {
                   }
                 }
                 if (typeCards.contains(typecard)) {
-                  responeCallback.responseClient(context, 400, 1,"Typecard card has registered", null);
+                  responeCallback.responseClient(context, 200, 1,"Typecard card has registered", null);
                 } else {
                   typeCards.add(typecard);
                   pgPool.preparedQuery("UPDATE card SET typecard = array_append(typecard,?) WHERE iduser = ?")

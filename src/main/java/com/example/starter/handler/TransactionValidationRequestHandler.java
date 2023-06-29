@@ -6,34 +6,35 @@ import io.vertx.ext.web.RoutingContext;
 import io.vertx.json.schema.*;
 
 public class TransactionValidationRequestHandler {
-  private final JsonSchema jsonSchemal;
+
+  private final JsonSchema jsonSchema;
   private ResponeCallback responeCallback = new ResponeCallback();
-  
   public TransactionValidationRequestHandler(final JsonSchema jsonSchema){
-    this.jsonSchemal = jsonSchema;
+    this.jsonSchema = jsonSchema;
   }
 
-  public void validate(RoutingContext context){
-    JsonObject jsonObject = context.body().asJsonObject();
+  public void validate(RoutingContext rc) {
+    JsonObject jsonBody = rc.body().asJsonObject();
 
-    OutputUnit outputUnit = Validator.create(jsonSchemal,
-    new JsonSchemaOptions()
-      .setDraft(Draft.DRAFT7)
-      .setBaseUri("https://vertx.io")
-      .setOutputFormat(OutputFormat.Basic)
-    ).validate(jsonObject);
+    OutputUnit resultVal = Validator.create(jsonSchema,
+      new JsonSchemaOptions()
+        .setDraft(Draft.DRAFT7)
+        .setBaseUri("https://vertx.io")
+        .setOutputFormat(OutputFormat.Basic)
+    ).validate(jsonBody);
 
-    if(outputUnit.getValid()){
-      context.next();
-    }
-    else {
+    if(resultVal.getValid()){
+      rc.next();
+    } else {
       String errorMsg = "Property does not match schema";
       try {
-        outputUnit.checkValidity();
-      } catch (JsonSchemaValidationException e) {
-        throw new RuntimeException(e);
+        resultVal.checkValidity();
+      } catch (JsonSchemaValidationException ex){
+        errorMsg = ex.getCause().getMessage() + "::" + ex.getMessage();
       }
-      responeCallback.responseClient(context, 400, 1, errorMsg, null);
+
+      responeCallback.responseClient(rc, 400, 1, errorMsg, null);
     }
+
   }
 }
