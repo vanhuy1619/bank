@@ -14,6 +14,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.client.WebClientOptions;
 
 public class UploadFileExcutor implements IUploadFileExcutor {
   private final String upload_file_host = ConfigUtils.getInstance().getProperties().getProperty(PropertiesConfig.upload_file_host);
@@ -23,6 +24,9 @@ public class UploadFileExcutor implements IUploadFileExcutor {
   private final Gson gson = new Gson();
 
   public UploadFileExcutor(Vertx vertx) {
+    WebClientOptions option= new WebClientOptions();
+    option.setMaxPoolSize(500);
+    option.setKeepAlive(true);
     vertxClient = WebClient.create(vertx);
   }
 
@@ -49,7 +53,7 @@ public class UploadFileExcutor implements IUploadFileExcutor {
             .build();
           context.response()
             .putHeader("Content-Type", "application/json")
-            .setStatusCode(500)
+            .setStatusCode(400)
             .end(gson.toJson(res));
         }
       });
