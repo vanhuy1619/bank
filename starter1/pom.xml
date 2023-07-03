@@ -196,6 +196,20 @@
       <version>1.20.0</version>
     </dependency>
 
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>1.6.3</version>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-micrometer-metrics</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-zipkin</artifactId>
+    </dependency>
+
     <!-- Thanks for using https://jar-download.com -->
 
   </dependencies>
