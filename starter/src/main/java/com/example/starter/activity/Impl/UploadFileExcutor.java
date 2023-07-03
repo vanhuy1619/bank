@@ -30,7 +30,7 @@ public class UploadFileExcutor implements IUploadFileExcutor {
   public void uploadFileTS(RoutingContext context) {
     JsonObject payload = context.getBodyAsJson();
 
-    vertxClient.post(upload_file_port, upload_file_host, EndpointConst.UPLOAD_FILE_URI)
+    vertxClient.post(upload_file_port, upload_file_host, EndpointConst.URI_UPLOAD_FILE)
       .timeout(60000)
       .putHeaders(createHeader())
       .sendJson(payload, ar -> {
