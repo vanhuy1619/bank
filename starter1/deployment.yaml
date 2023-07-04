@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: start-v1
+  labels:
+    app: start
+    version: v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: start
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: start
+        version: v1
+    spec:
+      serviceAccountName: start1
+      containers:
+        - name: start
+          image: Test-NeoBank-M:31320/ekyc-service/start1:<tag>
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8888

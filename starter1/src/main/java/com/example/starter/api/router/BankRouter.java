@@ -2,7 +2,6 @@ package com.example.starter.api.router;
 
 import com.example.starter.api.constant.EndpointConst;
 import com.example.starter.auth.AuthHandler;
-import com.example.starter.auth.tokenAuth;
 import com.example.starter.datasource.dataSource;
 import com.example.starter.handler.TransactionValidationRequestHandler;
 import com.example.starter.schema.TransactionSchemaBuider;
@@ -39,8 +38,9 @@ public class BankRouter {
     setData();
     router.route().handler(BodyHandler.create());
 
+    setAuth(router, vertx);
+
     //userinfo
-    router.post(EndpointConst.API_LOGIN).handler(userRepository::Login);
     router.post("/regist-info").handler(userRepository::handleRegistration);
     router.post("/regist").handler(userRepository::handleRegist);
     router.get(EndpointConst.API_INFO_ALL).handler(userRepository::select);
@@ -61,23 +61,27 @@ public class BankRouter {
       System.out.println(e.getMessage());
     }
 
+    //EWALLET
+    router.post(EndpointConst.API_REGIST_EWALLET).handler(ewalletRespository::registEwallet);
+  }
+
+  public void setAuth(Router router, Vertx vertx)
+  {
     KeyStoreOptions keyStoreOptions = new KeyStoreOptions()
+      .setType("jceks")
       .setPath("keys\\keystore.jceks")
       .setPassword("secret");
 
     JWTAuthOptions jwtAuthOptions = new JWTAuthOptions()
       .setKeyStore(keyStoreOptions);
 
-//    JWTAuth jwtAuth = JWTAuth.create(vertx, jwtAuthOptions);
-//
-//    AuthHandler authHandler = new AuthHandler();
-//    router.route("/api/*").handler(authHandler.authHandler(jwtAuth));
-//    router.post("/api/login").handler(ctx -> {
-//      authHandler.generalToken(ctx, jwtAuth);
-//    });
+    JWTAuth jwtAuth = JWTAuth.create(vertx, jwtAuthOptions);
 
-    //EWALLET
-    router.post(EndpointConst.API_REGIST_EWALLET).handler(ewalletRespository::registEwallet);
+    AuthHandler authHandler = new AuthHandler();
+    router.post(EndpointConst.API_LOGIN).handler(ctx->{
+      userRepository.Login(ctx, jwtAuth);
+    });
+    router.route("/bank/*").handler(authHandler.authHandler(jwtAuth));
 
   }
 }

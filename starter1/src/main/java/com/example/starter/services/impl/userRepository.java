@@ -1,6 +1,6 @@
 package com.example.starter.services.impl;
 
-import com.example.starter.auth.tokenAuth;
+import com.example.starter.auth.AuthHandler;
 import com.example.starter.config.uploadConfig;
 import com.example.starter.middleware.checkIdUser;
 import com.example.starter.model.Credentials;
@@ -18,6 +18,7 @@ import io.vertx.core.file.OpenOptions;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.jwt.JWTAuth;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.jdbcclient.JDBCPool;
 import io.vertx.sqlclient.Row;
@@ -46,6 +47,8 @@ public class userRepository implements UserService {
   checkIdUser checkIdUser = new checkIdUser();
 
   uploadConfig uploadConfig = new uploadConfig();
+
+  AuthHandler authHandler = new AuthHandler();
 
   public userRepository(JDBCPool pgPool) {
     this.pgPool = pgPool;
@@ -411,15 +414,17 @@ public class userRepository implements UserService {
       });
   }
 
-  public void Login(RoutingContext context)
+  public void Login(RoutingContext context, JWTAuth jwtAuth)
   {
     JsonObject jsonObject = context.getBodyAsJson();
+    System.out.println(jsonObject);
 
     String phone = jsonObject.getString("phone");
     String password = jsonObject.getString("password");
     if(!validateConfig.isValidPhone(phone) || password.trim().isEmpty())
     {
       responeCallback.responseClient(context, 400, 1, "Field is null", null);
+      return;
     }
 
     pgPool.preparedQuery("select password from credential where phone = ? limit 1")
@@ -433,15 +438,21 @@ public class userRepository implements UserService {
             boolean checkP = BCrypt.checkpw(password, passDecode);
             if(checkP == true)
             {
-//              String token = tokenAuth.generateToken(validateConfig.shuffleString(phone+passDecode));
-//              tokenAuth.sendTokenResponse(context.response(), token);
+              String hash = validateConfig.shuffleString(phone+passDecode);
+              authHandler.generalToken(context, jwtAuth, hash);
             }
             else
+            {
               responeCallback.responseClient(context, 200, 0 , String.valueOf(checkP), null);
+              return;
+            }
           }
         }
         else
+        {
           responeCallback.responseClient(context, 400, 1, "Not Found", null);
+          return;
+        }
       })
       .onFailure(f->{
         responeCallback.responseClient(context, 400, 1, "Fail query", null);

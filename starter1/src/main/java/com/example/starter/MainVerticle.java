@@ -2,7 +2,6 @@ package com.example.starter;
 
 import com.example.starter.api.constant.PropertiesConfig;
 import com.example.starter.api.router.BankRouter;
-import com.example.starter.auth.tokenAuth;
 import com.example.starter.utils.ConfigUtils;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
@@ -17,7 +16,6 @@ import io.vertx.ext.web.Router;
 
 public class MainVerticle extends AbstractVerticle {
   private JWTAuth jwtAuth;
-  private tokenAuth tokenAuth;
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {

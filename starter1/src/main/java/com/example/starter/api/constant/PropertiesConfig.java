@@ -9,4 +9,6 @@ public interface PropertiesConfig {
 
   public final static String ZIPKIN_ENDPOINT = "zipkin.endpoint";
 
+  public final static String TOKEN_EXPIRED = "token.expired";
+
 }
